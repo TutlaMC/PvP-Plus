@@ -52,7 +52,7 @@ public class DuelCommand extends TutlaCommand {
             ctx.player.sendMessage(TextUtil.parse("<red>Player not found."));
             return;
         }
-        DuelGui.open(ctx.player, duelManager, kitManager, List.of(target));
+        DuelGui.open(ctx.player, duelManager, kitManager, target, false);
 
     }
 

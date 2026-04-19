@@ -21,14 +21,14 @@ import java.util.List;
 public class DuelGui {
 
     // State held per-player while the GUI is open
-    public record DuelConfig(Kit kit, Arena arena, int rounds, List<Player> targets) {}
+    public record DuelConfig(Kit kit, Arena arena, int rounds, Player target, boolean enemyIsTeam) {}
 
     public static void open(Player player, DuelManager duelManager,
-                            KitManager kitManager, List<Player> targets) {
+                            KitManager kitManager, Player target, boolean enemyIsTeam) {
         // Grab default kit
         Kit defaultKit = kitManager.getServerKits().stream().findFirst().orElse(null);
         DuelConfig config = new DuelConfig(defaultKit, null,
-                defaultKit != null ? defaultKit.getDefaultRounds() : 3, targets);
+                defaultKit != null ? defaultKit.getDefaultRounds() : 3, target, enemyIsTeam);
         openWith(player, config, duelManager, kitManager);
     }
 
@@ -87,12 +87,12 @@ public class DuelGui {
     }
 
     private static ItemStack makeSendItem(DuelConfig config) {
-        boolean ready = config.kit() != null && !config.targets().isEmpty();
+        boolean ready = config.kit() != null && !config.target().isEmpty();
         ItemStack item = new ItemStack(ready ? Material.LIME_CONCRETE : Material.RED_CONCRETE);
         ItemMeta meta = item.getItemMeta();
         meta.displayName(TextUtil.parse(ready ? "<green>Send Challenge!" : "<red>No target selected"));
-        if (!config.targets().isEmpty())
-            meta.lore(List.of(TextUtil.parse("<gray>To: <white>" + config.targets().getFirst().getName())));
+        if (!config.target().isEmpty())
+            meta.lore(List.of(TextUtil.parse("<gray>To: <white>" + config.target().getName())));
         item.setItemMeta(meta);
         return item;
     }
@@ -110,31 +110,31 @@ public class DuelGui {
                 case 11 -> // Kit
                         KitSelectGui.open(player, kitManager, 0, kit -> {
                             DuelConfig updated = new DuelConfig(kit, config.arena(),
-                                    kit.getDefaultRounds(), config.targets());
+                                    kit.getDefaultRounds(), config.target(), config.enemyIsTeam());
                             openWith(player, updated, duelManager, kitManager);
                         });
                 case 13 -> { // Rounds
                     int delta = event.getClick() == ClickType.RIGHT ? -1 : 1;
                     int newRounds = Math.max(1, Math.min(99, config.rounds() + delta));
                     DuelConfig updated = new DuelConfig(config.kit(), config.arena(),
-                            newRounds, config.targets());
+                            newRounds, config.target(), config.enemyIsTeam());
                     openWith(player, updated, duelManager, kitManager);
                 }
                 case 15 -> {
                     ArenaSelectGui.open(player, PvpPlus.getInstance().getArenaManager(),0, arena -> {
                         DuelConfig updated = new DuelConfig(config.kit, arena,
-                                config.kit.getDefaultRounds(), config.targets());
+                                config.kit.getDefaultRounds(), config.target(), config.enemyIsTeam());
                         openWith(player, updated, duelManager, kitManager);
                     });
                 }
                 case 22 -> { // Send
-                    config.targets.forEach((target) -> {
-                        if (target == null || config.kit() == null) return;
-                        player.closeInventory();
-                        var result = duelManager.sendDuel(
-                                player, target, config.kit(),
-                                config.arena(), config.rounds());
-                        switch (result) {
+                    Player target = config.target();
+                    if (target == null || config.kit() == null) return;
+                    player.closeInventory();
+                    var result = duelManager.sendDuel(
+                            player, target, config.kit(),
+                            config.arena(), config.rounds());
+                    switch (result) {
                             case SENT -> {
                                 player.sendMessage(TextUtil.parse(
                                         "<green>Duel request sent to <yellow>" + target.getName() + "</yellow>. " +
@@ -157,8 +157,8 @@ public class DuelGui {
                                     player.sendMessage(TextUtil.parse("<red>That player already has a pending duel request."));
                             case NO_ARENA ->
                                     player.sendMessage(TextUtil.parse("<red>No arenas are available right now."));
-                        }
-                    });
+                    }
+
 
                 }
             }
