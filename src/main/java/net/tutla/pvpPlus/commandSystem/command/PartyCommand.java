@@ -1,19 +1,34 @@
 package net.tutla.pvpPlus.commandSystem.command;
 
+import net.tutla.pvpPlus.PvpPlus;
+import net.tutla.pvpPlus.arena.ArenaManager;
 import net.tutla.pvpPlus.commandSystem.*;
+import net.tutla.pvpPlus.fight.FightManager;
+import net.tutla.pvpPlus.fight.FightTeam;
+import net.tutla.pvpPlus.fight.FightType;
+import net.tutla.pvpPlus.gui.DuelGui;
+import net.tutla.pvpPlus.kit.KitManager;
 import net.tutla.pvpPlus.party.Party;
 import net.tutla.pvpPlus.party.PartyManager;
 import net.tutla.pvpPlus.util.TextUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class PartyCommand extends TutlaCommand {
 
     private final PartyManager partyManager;
+    private final FightManager fightManager;
+    private final KitManager kitManager;
+    private final ArenaManager arenaManager;
 
-    public PartyCommand(PartyManager partyManager) {
+    public PartyCommand(PartyManager partyManager, FightManager fightManager,
+                        KitManager kitManager, ArenaManager arenaManager) {
         super("party", "/party <subcommand>", "Manage your party",
                 CommandSection.CONTROLS,
                 new CommandTabAutoComplete("party",
@@ -38,6 +53,9 @@ public class PartyCommand extends TutlaCommand {
                 ))
         );
         this.partyManager = partyManager;
+        this.fightManager = fightManager;
+        this.kitManager = kitManager;
+        this.arenaManager = arenaManager;
     }
 
     @Override
@@ -247,9 +265,21 @@ public class PartyCommand extends TutlaCommand {
             return;
         }
         Party challenged = partyManager.getParty(ctx.player);
+
         partyManager.broadcastToParty(challenger, "<green>Your party duel was accepted! Get ready.");
         partyManager.broadcastToParty(challenged, "<green>Party duel accepted! Get ready.");
-        // TODO: hand off challenger + challenged parties to FightManager
+
+        // Open duel config GUI for the accepting leader — they pick kit/arena/rounds
+        // The challenger's leader is the "target" reference we pass as the opposing side
+        Player challengerLeader = Bukkit.getPlayer(challenger.getLeader());
+        DuelGui.open(ctx.player,
+                PvpPlus.getInstance().getDuelManager(),
+                kitManager,
+                challengerLeader,   // target display only — actual teams are built from parties
+                true                // enemyIsTeam = true, so FightManager builds team lists from parties
+        );
+        // When the GUI sends, DuelManager.sendPartyDuel() is called instead of sendDuel()
+        // We handle that in DuelGui by checking enemyIsTeam — see DuelGui changes below
     }
 
     private void runDuelDeny(CommandContext ctx) {
@@ -274,9 +304,19 @@ public class PartyCommand extends TutlaCommand {
             ctx.player.sendMessage(TextUtil.parse("<red>Need at least 2 members to split."));
             return;
         }
-        // TODO: hand off to FightManager — split party into two even teams
-        ctx.player.sendMessage(TextUtil.parse("<yellow>Split fight starting "));
-        
+
+        List<UUID> members = new ArrayList<>(party.getMembers());
+        Collections.shuffle(members);
+        int half = members.size() / 2;
+
+        List<FightTeam> teams = List.of(
+                new FightTeam("Team Red",  new ArrayList<>(members.subList(0, half))),
+                new FightTeam("Team Blue", new ArrayList<>(members.subList(half, members.size())))
+        );
+
+        DuelGui.openForTeams(ctx.player,
+                PvpPlus.getInstance().getDuelManager(),
+                kitManager, teams, FightType.SPLIT);
     }
 
     private void runFfa(CommandContext ctx) {
@@ -293,7 +333,17 @@ public class PartyCommand extends TutlaCommand {
             ctx.player.sendMessage(TextUtil.parse("<red>Need at least 2 members for an FFA."));
             return;
         }
-        // TODO: hand off to FightManager — every member is their own team
-        ctx.player.sendMessage(TextUtil.parse("<yellow>FFA starting — pending FightManager."));
+
+        List<FightTeam> teams = party.getMembers().stream()
+                .map(uuid -> {
+                    Player p = Bukkit.getPlayer(uuid);
+                    String name = p != null ? p.getName() : uuid.toString().substring(0, 8);
+                    return new FightTeam(name, List.of(uuid));
+                })
+                .collect(Collectors.toList());
+
+        DuelGui.openForTeams(ctx.player,
+                PvpPlus.getInstance().getDuelManager(),
+                kitManager, teams, FightType.FFA);
     }
 }

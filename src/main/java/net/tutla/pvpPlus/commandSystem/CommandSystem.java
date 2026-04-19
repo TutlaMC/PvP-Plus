@@ -27,7 +27,7 @@ public class CommandSystem {
         pvpPlus = PvpPlus.getInstance();
         commands.add(new ArenaCommand(pvpPlus.getArenaManager()));
         commands.add(new KitCommand(pvpPlus.getKitManager()));
-        commands.add(new PartyCommand(pvpPlus.getPartyManager()));
+        commands.add(new PartyCommand(pvpPlus.getPartyManager(), pvpPlus.getFightManager(), pvpPlus.getKitManager(), pvpPlus.getArenaManager()));
         commands.add(new DuelCommand(pvpPlus.getDuelManager(), pvpPlus.getFightManager(), pvpPlus.getKitManager()));
         commands.add(new QueueCommand(pvpPlus.getQueueManager(), pvpPlus.getKitManager()));
         commands.add(new LeaveFightCommand(pvpPlus.getFightManager()));

@@ -70,33 +70,52 @@ public class FightManager {
         fight.resetRound();
         fight.setState(FightState.COUNTDOWN);
 
-        // Save and clear inventories, apply kit, teleport to spawns
         List<FightTeam> teams = fight.getTeams();
-        List<Location> spawns1 = fight.getArena().getTeam1Spawns();
-        List<Location> spawns2 = fight.getArena().getTeam2Spawns();
+        List<Location> allSpawns = new ArrayList<>(fight.getArena().getTeam1Spawns());
+        allSpawns.addAll(fight.getArena().getTeam2Spawns());
 
-        for (int t = 0; t < teams.size(); t++) {
-            FightTeam team = teams.get(t);
-            List<Location> spawns = (t == 0) ? spawns1 : spawns2;
-            // For FFA, alternate between spawn lists
-            List<UUID> members = team.getMembers();
-            for (int i = 0; i < members.size(); i++) {
-                Player p = Bukkit.getPlayer(members.get(i));
-                if (p == null) continue;
-                Location spawn = spawns.get(i % spawns.size());
-                p.teleport(spawn);
-                p.setGameMode(GameMode.ADVENTURE);
-                p.setHealth(20);
-                p.setFoodLevel(20);
-                p.setSaturation(20);
-                p.getInventory().clear();
-                kitManager.applyKit(p, fight.getKit());
-                freezePlayer(p);
+        if (fight.getType() == FightType.FFA) {
+            // Shuffle spawns and assign one per player
+            Collections.shuffle(allSpawns);
+            int spawnIndex = 0;
+            for (FightTeam team : teams) {
+                for (UUID uuid : team.getMembers()) {
+                    Player p = Bukkit.getPlayer(uuid);
+                    if (p == null) continue;
+                    Location spawn = allSpawns.get(spawnIndex % allSpawns.size());
+                    spawnIndex++;
+                    setupPlayer(p, spawn, fight);
+                }
+            }
+        } else {
+            // Standard: team 0 -> spawns1, team 1 -> spawns2
+            List<Location> spawns1 = fight.getArena().getTeam1Spawns();
+            List<Location> spawns2 = fight.getArena().getTeam2Spawns();
+            for (int t = 0; t < teams.size(); t++) {
+                FightTeam team = teams.get(t);
+                List<Location> spawns = (t == 0) ? spawns1 : spawns2;
+                List<UUID> members = team.getMembers();
+                for (int i = 0; i < members.size(); i++) {
+                    Player p = Bukkit.getPlayer(members.get(i));
+                    if (p == null) continue;
+                    setupPlayer(p, spawns.get(i % spawns.size()), fight);
+                }
             }
         }
 
         updateScoreboard(fight);
         runCountdown(fight);
+    }
+
+    private void setupPlayer(Player p, Location spawn, Fight fight) {
+        p.teleport(spawn);
+        p.setGameMode(GameMode.ADVENTURE);
+        p.setHealth(20);
+        p.setFoodLevel(20);
+        p.setSaturation(20);
+        p.getInventory().clear();
+        kitManager.applyKit(p, fight.getKit());
+        // freeze is handled by PlayerMoveEvent during COUNTDOWN state
     }
 
     private void runCountdown(Fight fight) {

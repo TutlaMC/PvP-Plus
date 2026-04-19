@@ -16,15 +16,13 @@ public class GuiManager implements Listener {
     private static final Map<UUID, GuiSession> handlers = new HashMap<>();
 
     public static void register(Player player, GuiHandler handler) {
-        handlers.put(player.getUniqueId(), new GuiSession(player.getInventory(), handler));
+        handlers.put(player.getUniqueId(), new GuiSession(player.getOpenInventory().getTopInventory(), handler));
     }
 
     @EventHandler
     public void onClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
 
-        System.out.println(handlers);
-        System.out.println(handlers.get(player.getUniqueId()));
         GuiSession session = handlers.get(player.getUniqueId());
         if (session == null) return;
         session.handler().onClick(event);
