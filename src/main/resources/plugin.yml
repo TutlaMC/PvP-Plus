@@ -19,3 +19,5 @@ commands:
   kit:
     description: manage kits
     permission: permission.node
+  party:
+    description: manage parties

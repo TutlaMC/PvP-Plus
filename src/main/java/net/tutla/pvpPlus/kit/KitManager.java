@@ -55,6 +55,14 @@ public class KitManager {
         return true;
     }
 
+    public boolean setRounds(String name, int rounds) {
+        Kit kit = kits.get(key(name, false));
+        if (kit == null) return false;
+        kit.setDefaultRounds(rounds);
+        serializer.save(kit);
+        return true;
+    }
+
     // -------------------------------------------------------------------------
     // Kit access
     // -------------------------------------------------------------------------

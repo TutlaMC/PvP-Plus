@@ -40,6 +40,7 @@ public class KitSerializer {
             writeItemArray(out, kit.getContents());
             writeItemArray(out, kit.getArmor());
             writeItem(out, kit.getOffhand());
+            out.writeInt(kit.getDefaultRounds());
 
             if (kit.hasIcon()) {
                 out.writeBoolean(true);
@@ -99,6 +100,7 @@ public class KitSerializer {
             kit.setContents(readItemArray(in));
             kit.setArmor(readItemArray(in));
             kit.setOffhand(readItem(in));
+            kit.setDefaultRounds(in.readInt());
             boolean hasIcon = in.readBoolean();
             if (hasIcon) kit.setIcon(readItem(in));
 

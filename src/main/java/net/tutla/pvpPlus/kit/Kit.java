@@ -7,6 +7,7 @@ public class Kit {
     private ItemStack[] contents;    // 36 slots
     private ItemStack[] armor;       // 4 slots [boots, legs, chest, helmet]
     private ItemStack offhand;
+    private int defaultRounds = 3;
 
     public Kit(String name, boolean playerMade) {
         this.name = name;
@@ -20,12 +21,14 @@ public class Kit {
     public ItemStack[] getContents() { return contents; }
     public ItemStack[] getArmor() { return armor; }
     public ItemStack getOffhand() { return offhand; }
+    public int getDefaultRounds() { return defaultRounds; }
 
 
     public void setContents(ItemStack[] contents) { this.contents = contents; }
     public void setIcon(ItemStack icon) { this.icon = icon.clone(); }
     public void setArmor(ItemStack[] armor) { this.armor = armor; }
     public void setOffhand(ItemStack offhand) { this.offhand = offhand; }
+    public void setDefaultRounds(int rounds) { this.defaultRounds = rounds; }
 
 
     public boolean hasIcon() {

@@ -23,10 +23,11 @@ public class KitCommand extends TutlaCommand {
                                 new CommandTabAutoComplete("delete",  List.of(), "<kit>"),
                                 new CommandTabAutoComplete("list",    List.of(), ""),
                                 new CommandTabAutoComplete("config",  List.of(), "<kit>"),
-                                new CommandTabAutoComplete("icon",  List.of(), "<kit>")
+                                new CommandTabAutoComplete("icon",  List.of(), "<kit>"),
+                                new CommandTabAutoComplete("rounds", List.of(), "")
                         ),
                         "<values>"
-                ).setValues(List.of("create", "save", "load", "delete", "list", "config", "icon"))
+                ).setValues(List.of("create", "save", "load", "delete", "list", "config", "icon", "rounds"))
         );
         this.kitManager = kitManager;
     }
@@ -41,6 +42,8 @@ public class KitCommand extends TutlaCommand {
             case "delete"  -> runDelete(ctx);
             case "list"    -> runList(ctx);
             case "config"  -> runConfig(ctx);
+            case "icon" -> runIcon(ctx);
+            case "rounds" -> runRounds(ctx);
             default        -> { return false; }
         }
         return true;
@@ -170,6 +173,29 @@ public class KitCommand extends TutlaCommand {
         ctx.player.sendMessage(TextUtil.parse(
                 "<green>Icon for kit <yellow>" + ctx.args[1] + "</yellow> set to <white>" +
                         held.getType().name().toLowerCase() + "</white>."));
+    }
+
+    private void runRounds(CommandContext ctx) {
+        if (ctx.args.length < 3) {
+            ctx.player.sendMessage(TextUtil.parse("<red>Usage: /kit rounds <name> <number>"));
+            return;
+        }
+        int rounds;
+        try { rounds = Integer.parseInt(ctx.args[2]); }
+        catch (NumberFormatException e) {
+            ctx.player.sendMessage(TextUtil.parse("<red>Invalid number."));
+            return;
+        }
+        if (rounds < 1 || rounds > 99) {
+            ctx.player.sendMessage(TextUtil.parse("<red>Rounds must be between 1 and 99."));
+            return;
+        }
+        if (!kitManager.setRounds(ctx.args[1], rounds)) {
+            ctx.player.sendMessage(TextUtil.parse("<red>Kit not found."));
+            return;
+        }
+        ctx.player.sendMessage(TextUtil.parse(
+                "<green>Kit <yellow>" + ctx.args[1] + "</yellow> default rounds set to <white>" + rounds + "</white>."));
     }
 
     private int countItems(Kit kit) {

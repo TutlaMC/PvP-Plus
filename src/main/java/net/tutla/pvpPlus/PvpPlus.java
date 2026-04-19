@@ -6,6 +6,7 @@ import net.tutla.pvpPlus.commandSystem.CommandSystem;
 import net.tutla.pvpPlus.kit.KitSerializer;
 import net.tutla.pvpPlus.arena.ArenaManager;
 import net.tutla.pvpPlus.kit.KitManager;
+import net.tutla.pvpPlus.party.PartyManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -22,6 +23,7 @@ public final class PvpPlus extends JavaPlugin {
 
     private final ArenaSerializer serializer = new ArenaSerializer(getDataFolder(), getLogger());
     private final ArenaManager arenaManager = new ArenaManager(serializer);
+    private final PartyManager partyManager = new PartyManager();
 
     KitSerializer kitSerializer = new KitSerializer(getDataFolder(), getLogger());
     KitManager kitManager = new KitManager(kitSerializer);
@@ -37,6 +39,9 @@ public final class PvpPlus extends JavaPlugin {
     public KitManager getKitManager() {
         return kitManager;
     }
+    public PartyManager getPartyManager(){
+        return partyManager;
+    }
 
 
     // actual shi
@@ -50,6 +55,8 @@ public final class PvpPlus extends JavaPlugin {
         commandSystem.initialise();
 
         getServer().getPluginManager().registerEvents(new EventListeners(), this);
+        getServer().getPluginManager().registerEvents(new PartyChatListener(partyManager), this);
+
         getLogger().info("PvP Plugin Loaded!");
 
         new BukkitRunnable() {
