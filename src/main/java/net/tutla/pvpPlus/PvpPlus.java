@@ -3,7 +3,9 @@ package net.tutla.pvpPlus;
 import net.tutla.pvpPlus.arena.ArenaSerializer;
 import net.tutla.pvpPlus.commandSystem.CommandContext;
 import net.tutla.pvpPlus.commandSystem.CommandSystem;
+import net.tutla.pvpPlus.kit.KitSerializer;
 import net.tutla.pvpPlus.manager.ArenaManager;
+import net.tutla.pvpPlus.manager.KitManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -21,6 +23,9 @@ public final class PvpPlus extends JavaPlugin {
     private final ArenaSerializer serializer = new ArenaSerializer(getDataFolder(), getLogger());
     private final ArenaManager arenaManager = new ArenaManager(serializer);
 
+    KitSerializer kitSerializer = new KitSerializer(getDataFolder(), getLogger());
+    KitManager kitManager = new KitManager(kitSerializer);
+
     // access functions
     public static PvpPlus getInstance() {
         return instance;
@@ -28,6 +33,9 @@ public final class PvpPlus extends JavaPlugin {
 
     public ArenaManager getArenaManager(){
         return arenaManager;
+    }
+    public KitManager getKitManager() {
+        return kitManager;
     }
 
 
@@ -37,6 +45,7 @@ public final class PvpPlus extends JavaPlugin {
         instance = this;
         saveDefaultConfig();
 
+        kitManager.loadAll();
         arenaManager.loadAll();
         commandSystem.initialise();
 

@@ -4,6 +4,8 @@ package net.tutla.pvpPlus.commandSystem;
 import net.tutla.pvpPlus.PvpPlus;
 import net.tutla.pvpPlus.commandSystem.command.ArenaCommand;
 import net.tutla.pvpPlus.arena.Arena;
+import net.tutla.pvpPlus.commandSystem.command.KitCommand;
+import net.tutla.pvpPlus.kit.Kit;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -24,6 +26,7 @@ public class CommandSystem {
         //CommandManhuntHelp.generateHelpString(toPut);
         pvpPlus = PvpPlus.getInstance();
         commands.add(new ArenaCommand(pvpPlus.getArenaManager()));
+        commands.add(new KitCommand(pvpPlus.getKitManager()));
     }
 
     public boolean execute(CommandContext cmdParams){
@@ -95,6 +98,12 @@ public class CommandSystem {
             case "<arena>" -> {
                 return pvpPlus.getArenaManager().getAllArenas().stream()
                         .map(Arena::getName)
+                        .filter(name -> name.toLowerCase().startsWith(arg.toLowerCase()))
+                        .toList();
+            }
+            case "<kit>" -> {
+                return pvpPlus.getKitManager().getAllKits().stream()
+                        .map(Kit::getName)
                         .filter(name -> name.toLowerCase().startsWith(arg.toLowerCase()))
                         .toList();
             }

@@ -14,5 +14,8 @@ permissions:
       permission.node.child: true
 commands:
   arena:
-    description: Start/stop/set cooldown/prepare
+    description: manage arenas
+    permission: permission.node
+  kit:
+    description: manage kits
     permission: permission.node
