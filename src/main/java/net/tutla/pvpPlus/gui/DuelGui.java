@@ -87,11 +87,11 @@ public class DuelGui {
     }
 
     private static ItemStack makeSendItem(DuelConfig config) {
-        boolean ready = config.kit() != null && !config.target().isEmpty();
+        boolean ready = config.kit() != null && config.target() != null;
         ItemStack item = new ItemStack(ready ? Material.LIME_CONCRETE : Material.RED_CONCRETE);
         ItemMeta meta = item.getItemMeta();
         meta.displayName(TextUtil.parse(ready ? "<green>Send Challenge!" : "<red>No target selected"));
-        if (!config.target().isEmpty())
+        if (config.target() != null)
             meta.lore(List.of(TextUtil.parse("<gray>To: <white>" + config.target().getName())));
         item.setItemMeta(meta);
         return item;
