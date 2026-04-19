@@ -27,9 +27,6 @@ public class GuiManager implements Listener {
         System.out.println(handlers.get(player.getUniqueId()));
         GuiSession session = handlers.get(player.getUniqueId());
         if (session == null) return;
-
-        //if (!event.getView().getTopInventory().equals(session.inventory())) return;
-        System.out.println("weeeeeeeeeeeeeeeeeeeeeee");
         session.handler().onClick(event);
     }
 
