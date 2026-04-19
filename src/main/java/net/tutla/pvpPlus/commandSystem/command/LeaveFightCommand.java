@@ -8,7 +8,9 @@ import net.tutla.pvpPlus.util.TextUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class LeaveFightCommand extends TutlaCommand {
 
@@ -27,16 +29,31 @@ public class LeaveFightCommand extends TutlaCommand {
             fightManager.removeSpectator(ctx.player);
             ctx.player.sendMessage(TextUtil.parse("<yellow>Left spectator mode."));
             return true;
-        } else if (fightManager.isInFight(ctx.player)){
-            ctx.player.sendMessage(TextUtil.parse("<yellow>You forfeited"));
-            fightManager.getFight(ctx.player).getAllParticipants().forEach((uuid)-> {
-                Player player = Bukkit.getPlayer(uuid);
-                player.sendMessage(TextUtil.parse("<cyan>"+ctx.player.getName()+" <yellow> forfeited"));
-            });
+        }
+
+        if (fightManager.isInFight(ctx.player)) {
+            Fight fight = fightManager.getFight(ctx.player);
+
+            // Snapshot participants BEFORE leaveFight modifies state
+            List<UUID> participants = new ArrayList<>(fight.getAllParticipants());
+
+            ctx.player.sendMessage(TextUtil.parse("<yellow>You forfeited."));
+
+            // Notify others
+            for (UUID uuid : participants) {
+                if (uuid.equals(ctx.player.getUniqueId())) continue;
+                Player other = Bukkit.getPlayer(uuid);
+                if (other != null) {
+                    other.sendMessage(TextUtil.parse(
+                            "<aqua>" + ctx.player.getName() + " <yellow>forfeited."));
+                }
+            }
+
             fightManager.leaveFight(ctx.player);
             return true;
         }
-        ctx.player.sendMessage(TextUtil.parse("<red>You are not spectating a fight."));
+
+        ctx.player.sendMessage(TextUtil.parse("<red>You are not in a fight or spectating."));
         return true;
     }
 }

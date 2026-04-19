@@ -190,14 +190,9 @@ public class DuelGui {
                     }
 
                     if (config.enemyIsTeam()) {
-                        // Party vs party duel — build teams from the two parties
                         Party myParty = PvpPlus.getInstance().getPartyManager().getParty(player);
-                        Party enemyParty = config.target() != null
-                                ? PvpPlus.getInstance().getPartyManager().getParty(config.target())
-                                : null;
-
-                        if (myParty == null || enemyParty == null) {
-                            player.sendMessage(TextUtil.parse("<red>Party no longer valid."));
+                        if (myParty == null) {
+                            player.sendMessage(TextUtil.parse("<red>You are not in a party."));
                             return;
                         }
 
@@ -210,19 +205,35 @@ public class DuelGui {
                             return;
                         }
 
-                        List<FightTeam> teams = List.of(
-                                new FightTeam(player.getName() + "'s Party",
-                                        new ArrayList<>(myParty.getMembers())),
-                                new FightTeam(config.target().getName() + "'s Party",
-                                        new ArrayList<>(enemyParty.getMembers()))
+                        // config.target() is the enemy leader — send the challenge with full config
+                        var result = PvpPlus.getInstance().getPartyManager().sendDuel(
+                                player,
+                                config.target().getName(),
+                                config.kit(),
+                                arena,
+                                config.rounds()
                         );
 
-                        boolean started = PvpPlus.getInstance().getFightManager()
-                                .startFight(FightType.PARTY_DUEL, teams, arena, config.kit(), config.rounds());
-
-                        if (!started) {
-                            player.sendMessage(TextUtil.parse("<red>Could not start fight — someone may already be in one."));
+                        switch (result) {
+                            case SENT -> {
+                                Party challenged = PvpPlus.getInstance().getPartyManager().getParty(config.target());
+                                PvpPlus.getInstance().getPartyManager().broadcastToParty(challenged,
+                                        "<yellow>" + player.getName() + "'s party challenged you to a duel!\n" +
+                                                "<gray>Kit: <white>" + config.kit().getName() +
+                                                " <gray>| Rounds: <white>" + config.rounds() + "\n" +
+                                                "<gray>Leader: use <white>/party duel accept</white> or <white>/party duel deny</white>.");
+                                player.sendMessage(TextUtil.parse("<green>Party duel challenge sent!"));
+                            }
+                            case NOT_IN_PARTY ->
+                                    player.sendMessage(TextUtil.parse("<red>You are not in a party."));
+                            case NOT_LEADER ->
+                                    player.sendMessage(TextUtil.parse("<red>Only the party leader can send challenges."));
+                            case TARGET_NOT_FOUND ->
+                                    player.sendMessage(TextUtil.parse("<red>Target party leader not found."));
+                            case ALREADY_PENDING ->
+                                    player.sendMessage(TextUtil.parse("<red>That party already has a pending challenge."));
                         }
+                        return;
                     } else {
                         Player target = config.target();
                         if (target == null) return;

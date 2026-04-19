@@ -1,6 +1,7 @@
 package net.tutla.pvpPlus.commandSystem.command;
 
 import net.tutla.pvpPlus.PvpPlus;
+import net.tutla.pvpPlus.arena.Arena;
 import net.tutla.pvpPlus.arena.ArenaManager;
 import net.tutla.pvpPlus.commandSystem.*;
 import net.tutla.pvpPlus.fight.FightManager;
@@ -220,66 +221,75 @@ public class PartyCommand extends TutlaCommand {
             ctx.player.sendMessage(TextUtil.parse("<red>Usage: /party duel <leader name>"));
             return;
         }
-        // /party duel accept
-        if (ctx.args[1].equalsIgnoreCase("accept")) {
-            runDuelAccept(ctx);
+        if (ctx.args[1].equalsIgnoreCase("accept")) { runDuelAccept(ctx); return; }
+        if (ctx.args[1].equalsIgnoreCase("deny"))   { runDuelDeny(ctx);   return; }
+
+        Party myParty = partyManager.getParty(ctx.player);
+        if (myParty == null) {
+            ctx.player.sendMessage(TextUtil.parse("<red>You are not in a party."));
             return;
         }
-        // /party duel deny
-        if (ctx.args[1].equalsIgnoreCase("deny")) {
-            runDuelDeny(ctx);
+        if (!myParty.isLeader(ctx.player.getUniqueId())) {
+            ctx.player.sendMessage(TextUtil.parse("<red>Only the leader can send challenges."));
             return;
         }
-        // /party duel <player>
-        Player opposer = Bukkit.getPlayer(ctx.args[1]);
-        if (opposer != null){
-            if (ctx.player.getUniqueId() == opposer.getUniqueId()){
-                ctx.player.sendMessage(TextUtil.parse("<red>You cannot send it to your party!"));
-                return;
-            }
-        }
 
-        switch (partyManager.sendDuel(ctx.player, ctx.args[1])) {
-            case SENT -> {
-                Party challenged = partyManager.getParty(opposer);
-                partyManager.broadcastToParty(challenged,
-                        "<yellow>" + ctx.player.getName() + "'s party has challenged you to a duel!\n" +
-                                "<gray>Leader: use <white>/party duel accept</white> or <white>/party duel deny</white>.");
-                ctx.player.sendMessage(TextUtil.parse("<green>Party duel challenge sent!"));
-            }
-            case NOT_IN_PARTY ->
-                    ctx.player.sendMessage(TextUtil.parse("<red>You are not in a party."));
-            case NOT_LEADER ->
-                    ctx.player.sendMessage(TextUtil.parse("<red>Only the party leader can send duel challenges."));
-            case TARGET_NOT_FOUND ->
-                    ctx.player.sendMessage(TextUtil.parse("<red>Party leader not found."));
-            case ALREADY_PENDING ->
-                    ctx.player.sendMessage(TextUtil.parse("<red>That party already has a pending duel request."));
-        }
-    }
-
-    private void runDuelAccept(CommandContext ctx) {
-        Party challenger = partyManager.acceptDuel(ctx.player);
-        if (challenger == null) {
-            ctx.player.sendMessage(TextUtil.parse("<red>No pending party duel to accept."));
+        Player targetLeader = Bukkit.getPlayer(ctx.args[1]);
+        if (targetLeader == null || partyManager.getParty(targetLeader) == null) {
+            ctx.player.sendMessage(TextUtil.parse("<red>That player is not in a party."));
             return;
         }
-        Party challenged = partyManager.getParty(ctx.player);
+        if (targetLeader.equals(ctx.player)) {
+            ctx.player.sendMessage(TextUtil.parse("<red>You cannot challenge your own party."));
+            return;
+        }
 
-        partyManager.broadcastToParty(challenger, "<green>Your party duel was accepted! Get ready.");
-        partyManager.broadcastToParty(challenged, "<green>Party duel accepted! Get ready.");
-
-        // Open duel config GUI for the accepting leader — they pick kit/arena/rounds
-        // The challenger's leader is the "target" reference we pass as the opposing side
-        Player challengerLeader = Bukkit.getPlayer(challenger.getLeader());
+        // Open config GUI — target is the enemy leader, enemyIsTeam = true
         DuelGui.open(ctx.player,
                 PvpPlus.getInstance().getDuelManager(),
                 kitManager,
-                challengerLeader,   // target display only — actual teams are built from parties
-                true                // enemyIsTeam = true, so FightManager builds team lists from parties
+                targetLeader,
+                true   // enemyIsTeam — send handler will call partyManager.sendDuel
         );
-        // When the GUI sends, DuelManager.sendPartyDuel() is called instead of sendDuel()
-        // We handle that in DuelGui by checking enemyIsTeam — see DuelGui changes below
+    }
+
+    private void runDuelAccept(CommandContext ctx) {
+        PartyManager.PartyDuelRequest req = partyManager.acceptDuel(ctx.player);
+        if (req == null) {
+            ctx.player.sendMessage(TextUtil.parse("<red>No pending party duel to accept."));
+            return;
+        }
+
+        Party challenged = partyManager.getParty(ctx.player);
+        Party challenger = req.challenger();
+
+        partyManager.broadcastToParty(challenger, "<green>Party duel accepted! Get ready.");
+        partyManager.broadcastToParty(challenged, "<green>Party duel accepted! Get ready.");
+
+        Arena arena = req.arena() != null
+                ? req.arena()
+                : arenaManager.getAvailableArena().orElse(null);
+
+        if (arena == null) {
+            partyManager.broadcastToParty(challenger, "<red>No arenas available — fight cancelled.");
+            partyManager.broadcastToParty(challenged, "<red>No arenas available — fight cancelled.");
+            return;
+        }
+
+        List<FightTeam> teams = List.of(
+                new FightTeam(Bukkit.getPlayer(challenger.getLeader()).getName() + "'s Party",
+                        new ArrayList<>(challenger.getMembers())),
+                new FightTeam(ctx.player.getName() + "'s Party",
+                        new ArrayList<>(challenged.getMembers()))
+        );
+
+        boolean started = fightManager.startFight(
+                FightType.PARTY_DUEL, teams, arena, req.kit(), req.rounds());
+
+        if (!started) {
+            partyManager.broadcastToParty(challenger, "<red>Could not start fight — someone may already be in one.");
+            partyManager.broadcastToParty(challenged, "<red>Could not start fight — someone may already be in one.");
+        }
     }
 
     private void runDuelDeny(CommandContext ctx) {

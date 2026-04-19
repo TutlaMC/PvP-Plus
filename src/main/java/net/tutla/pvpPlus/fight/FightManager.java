@@ -229,26 +229,50 @@ public class FightManager {
     // -------------------------------------------------------------------------
 
     public void leaveFight(Player player) {
-        Fight fight = playerFight.remove(player.getUniqueId());
+        Fight fight = playerFight.get(player.getUniqueId()); // don't remove yet
         if (fight == null) return;
 
-        FightTeam team = fight.getTeamOf(player.getUniqueId());
-        if (team != null) {
-            team.removeMember(player.getUniqueId());
-            team.eliminatePlayer(player.getUniqueId());
-        }
-
+        // Immediately restore this player to survival
         player.setGameMode(GameMode.SURVIVAL);
         player.getInventory().clear();
+        player.teleport(fight.getArena().getPos1().clone().add(0, 2, 0));
         removeScoreboard(player);
+        playerFight.remove(player.getUniqueId());
 
-        FightTeam winner = fight.getLastSurvivingTeam();
-        if (winner != null) {
-            endFight(fight, winner);
-            return;
+        // Mark them eliminated and removed from their team
+        FightTeam team = fight.getTeamOf(player.getUniqueId());
+        if (team != null) {
+            team.eliminatePlayer(player.getUniqueId());
+            team.removeMember(player.getUniqueId());
         }
 
-        updateScoreboard(fight);
+        // If fight is already ending/ended, don't interfere
+        if (fight.getState() == FightState.ENDED) return;
+
+        // Find the winner — works for both FFA and standard fights
+        FightTeam winner = findWinnerAfterLeave(fight);
+        if (winner != null) {
+            endFight(fight, winner);
+        } else {
+            // Fight continues, just update scoreboard
+            updateScoreboard(fight);
+        }
+    }
+
+    private FightTeam findWinnerAfterLeave(Fight fight) {
+        // Get teams that still have members
+        List<FightTeam> teamsWithMembers = fight.getTeams().stream()
+                .filter(t -> !t.getMembers().isEmpty())
+                .toList();
+
+        // If only one team has members left, they win
+        if (teamsWithMembers.size() == 1) return teamsWithMembers.get(0);
+
+        // If no teams have members (shouldn't happen but guard it)
+        if (teamsWithMembers.isEmpty()) return null;
+
+        // Multiple teams still active — fight continues
+        return null;
     }
 
     public void endFight(Fight fight, FightTeam winner) {

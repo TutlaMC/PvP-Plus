@@ -1,5 +1,7 @@
 package net.tutla.pvpPlus.party;
 
+import net.tutla.pvpPlus.arena.Arena;
+import net.tutla.pvpPlus.kit.Kit;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import java.util.*;
@@ -11,9 +13,10 @@ public class PartyManager {
 
     // pending invites: invited UUID -> inviter's party
     private final Map<UUID, Party> pendingInvites = new HashMap<>();
+    public record PartyDuelRequest(Party challenger, Kit kit, Arena arena, int rounds) {}
 
     // pending party duels: challenged party id -> challenger party
-    private final Map<UUID, Party> pendingDuels = new HashMap<>();
+    private final Map<UUID, PartyDuelRequest> pendingDuels = new HashMap<>();
 
     // -------------------------------------------------------------------------
     // Party lifecycle
@@ -42,7 +45,7 @@ public class PartyManager {
         // Clean up any pending invites pointing to this party
         pendingInvites.entrySet().removeIf(e -> e.getValue().getId().equals(party.getId()));
         pendingDuels.entrySet().removeIf(e ->
-                e.getValue().getId().equals(party.getId()) ||
+                e.getValue().challenger().getId().equals(party.getId()) ||
                         e.getKey().equals(party.getId()));
         return true;
     }
@@ -149,7 +152,7 @@ public class PartyManager {
 
     public enum DuelResult { SENT, NOT_IN_PARTY, NOT_LEADER, TARGET_NOT_FOUND, ALREADY_PENDING }
 
-    public DuelResult sendDuel(Player leader, String targetPartyLeaderName) {
+    public DuelResult sendDuel(Player leader, String targetPartyLeaderName, Kit kit, Arena arena, int rounds) {
         Party challenger = getParty(leader);
         if (challenger == null) return DuelResult.NOT_IN_PARTY;
         if (!challenger.isLeader(leader.getUniqueId())) return DuelResult.NOT_LEADER;
@@ -160,11 +163,11 @@ public class PartyManager {
         if (challenged == null) return DuelResult.TARGET_NOT_FOUND;
 
         if (pendingDuels.containsKey(challenged.getId())) return DuelResult.ALREADY_PENDING;
-        pendingDuels.put(challenged.getId(), challenger);
+        pendingDuels.put(challenged.getId(), new PartyDuelRequest(challenger, kit, arena, rounds));
         return DuelResult.SENT;
     }
 
-    public Party acceptDuel(Player leader) {
+    public PartyDuelRequest acceptDuel(Player leader) {
         Party challenged = getParty(leader);
         if (challenged == null || !challenged.isLeader(leader.getUniqueId())) return null;
         return pendingDuels.remove(challenged.getId());
@@ -173,9 +176,9 @@ public class PartyManager {
     public boolean denyDuel(Player leader) {
         Party challenged = getParty(leader);
         if (challenged == null || !challenged.isLeader(leader.getUniqueId())) return false;
-        Party challenger = pendingDuels.remove(challenged.getId());
-        if (challenger == null) return false;
-        Player challengerLeader = Bukkit.getPlayer(challenger.getLeader());
+        PartyDuelRequest request = pendingDuels.remove(challenged.getId());
+        if (request == null) return false;
+        Player challengerLeader = Bukkit.getPlayer(request.challenger().getLeader());
         if (challengerLeader != null) {
             challengerLeader.sendMessage(net.tutla.pvpPlus.util.TextUtil.parse(
                     "<red>Your party duel was denied."));
