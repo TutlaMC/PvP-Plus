@@ -1,0 +1,18 @@
+name: pvp-plus
+version: '1.0'
+main: net.tutla.pvpPlus.PvpPlus
+api-version: '1.21.11'
+authors: [ TutlaMC ]
+description: skibidi
+website: https://tutla.net
+
+permissions:
+  permission.node:
+    description: "Tutla Permission Node"
+    default: op
+    children:
+      permission.node.child: true
+commands:
+  arena:
+    description: Start/stop/set cooldown/prepare
+    permission: permission.node
