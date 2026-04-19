@@ -1,7 +1,7 @@
 package net.tutla.pvpPlus.commandSystem.command;
 
 import net.tutla.pvpPlus.commandSystem.*;
-import net.tutla.pvpPlus.manager.ArenaManager;
+import net.tutla.pvpPlus.arena.ArenaManager;
 import net.tutla.pvpPlus.arena.Arena;
 import net.tutla.pvpPlus.util.TextUtil;
 import org.bukkit.Location;

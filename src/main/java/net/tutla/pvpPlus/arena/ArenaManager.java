@@ -1,7 +1,5 @@
-package net.tutla.pvpPlus.manager;
+package net.tutla.pvpPlus.arena;
 
-import net.tutla.pvpPlus.arena.Arena;
-import net.tutla.pvpPlus.arena.ArenaSerializer;
 import org.bukkit.entity.Player;
 import java.util.*;
 

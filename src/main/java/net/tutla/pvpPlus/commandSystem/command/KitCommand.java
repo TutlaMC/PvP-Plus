@@ -2,9 +2,8 @@ package net.tutla.pvpPlus.commandSystem.command;
 
 import net.tutla.pvpPlus.commandSystem.*;
 import net.tutla.pvpPlus.kit.Kit;
-import net.tutla.pvpPlus.manager.KitManager;
+import net.tutla.pvpPlus.kit.KitManager;
 import net.tutla.pvpPlus.util.TextUtil;
-import org.bukkit.GameMode;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;

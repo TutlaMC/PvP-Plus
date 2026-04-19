@@ -1,7 +1,5 @@
-package net.tutla.pvpPlus.manager;
+package net.tutla.pvpPlus.kit;
 
-import net.tutla.pvpPlus.kit.Kit;
-import net.tutla.pvpPlus.kit.KitSerializer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
