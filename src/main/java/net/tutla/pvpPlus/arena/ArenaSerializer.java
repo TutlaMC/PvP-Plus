@@ -4,16 +4,17 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class ArenaSerializer {
+
+    private static final int FORMAT_VERSION = 1;
 
     private final File arenasFolder;
     private final Logger log;
@@ -30,20 +31,27 @@ public class ArenaSerializer {
 
     public void save(Arena arena) {
         File file = fileFor(arena.getName());
-        YamlConfiguration cfg = new YamlConfiguration();
+        try (DataOutputStream out = new DataOutputStream(
+                new GZIPOutputStream(new FileOutputStream(file)))) {
 
-        writeLocation(cfg, "bounds.pos1", arena.getPos1());
-        writeLocation(cfg, "bounds.pos2", arena.getPos2());
+            out.writeInt(FORMAT_VERSION);
 
-        writeLocationList(cfg, "spawns.team1", arena.getTeam1Spawns());
-        writeLocationList(cfg, "spawns.team2", arena.getTeam2Spawns());
+            // Bounds
+            writeLocation(out, arena.getPos1());
+            writeLocation(out, arena.getPos2());
 
-        if (arena.hasSnapshot()) {
-            writeSnapshot(cfg, arena.getSnapshot());
-        }
+            // Spawns
+            writeLocationList(out, arena.getTeam1Spawns());
+            writeLocationList(out, arena.getTeam2Spawns());
 
-        try {
-            cfg.save(file);
+            // Snapshot
+            if (arena.hasSnapshot()) {
+                out.writeBoolean(true);
+                writeSnapshot(out, arena.getSnapshot());
+            } else {
+                out.writeBoolean(false);
+            }
+
         } catch (IOException e) {
             log.severe("Failed to save arena " + arena.getName() + ": " + e.getMessage());
         }
@@ -60,7 +68,7 @@ public class ArenaSerializer {
 
     public List<Arena> loadAll() {
         List<Arena> result = new ArrayList<>();
-        File[] files = arenasFolder.listFiles(f -> f.getName().endsWith(".yml"));
+        File[] files = arenasFolder.listFiles(f -> f.getName().endsWith(".dat"));
         if (files == null) return result;
 
         for (File file : files) {
@@ -75,76 +83,63 @@ public class ArenaSerializer {
     }
 
     // -------------------------------------------------------------------------
-    // Internal - load one file
+    // Internal load
     // -------------------------------------------------------------------------
 
-    private Arena loadFrom(File file) {
-        YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
-        String name = file.getName().replace(".yml", "");
-        Arena arena = new Arena(name);
+    private Arena loadFrom(File file) throws IOException {
+        try (DataInputStream in = new DataInputStream(
+                new GZIPInputStream(new FileInputStream(file)))) {
 
-        Location pos1 = readLocation(cfg, "bounds.pos1");
-        Location pos2 = readLocation(cfg, "bounds.pos2");
-        if (pos1 == null || pos2 == null) {
-            log.warning("Arena " + name + " is missing bounds, skipping.");
-            return null;
+            int version = in.readInt();
+            if (version != FORMAT_VERSION) {
+                log.warning("Unknown arena format version " + version + " in " + file.getName());
+                return null;
+            }
+
+            String name = file.getName().replace(".dat", "");
+            Arena arena = new Arena(name);
+
+            arena.setPos1(readLocation(in));
+            arena.setPos2(readLocation(in));
+
+            readLocationList(in).forEach(arena::addTeam1Spawn);
+            readLocationList(in).forEach(arena::addTeam2Spawn);
+
+            boolean hasSnapshot = in.readBoolean();
+            if (hasSnapshot) {
+                arena.setSnapshot(readSnapshot(in, arena.getPos1().getWorld()));
+            }
+
+            return arena;
         }
-        arena.setPos1(pos1);
-        arena.setPos2(pos2);
-
-        readLocationList(cfg, "spawns.team1").forEach(arena::addTeam1Spawn);
-        readLocationList(cfg, "spawns.team2").forEach(arena::addTeam2Spawn);
-
-        if (cfg.contains("snapshot")) {
-            ArenaSnapshot snapshot = readSnapshot(cfg, pos1.getWorld());
-            arena.setSnapshot(snapshot);
-        }
-
-        return arena;
     }
 
     // -------------------------------------------------------------------------
-    // Snapshot serialization
+    // Snapshot
     // -------------------------------------------------------------------------
 
-    private void writeSnapshot(YamlConfiguration cfg, ArenaSnapshot snapshot) {
-        ConfigurationSection sec = cfg.createSection("snapshot");
-        int i = 0;
-        for (var entry : snapshot.getEntries().entrySet()) {
+    private void writeSnapshot(DataOutputStream out, ArenaSnapshot snapshot) throws IOException {
+        var entries = snapshot.getEntries().entrySet();
+        out.writeInt(entries.size());
+        for (var entry : entries) {
             Location loc = entry.getKey();
-            ArenaSnapshot.BlockEntry block = entry.getValue();
-
-            ConfigurationSection blockSec = sec.createSection(String.valueOf(i++));
-            blockSec.set("x", loc.getBlockX());
-            blockSec.set("y", loc.getBlockY());
-            blockSec.set("z", loc.getBlockZ());
-            blockSec.set("data", block.blockData().getAsString());
+            out.writeInt(loc.getBlockX());
+            out.writeInt(loc.getBlockY());
+            out.writeInt(loc.getBlockZ());
+            out.writeUTF(entry.getValue().blockData().getAsString());
         }
-        sec.set("count", i);
     }
 
-    private ArenaSnapshot readSnapshot(YamlConfiguration cfg, World world) {
-        ConfigurationSection sec = cfg.getConfigurationSection("snapshot");
-        if (sec == null) return null;
-
+    private ArenaSnapshot readSnapshot(DataInputStream in, World world) throws IOException {
         ArenaSnapshot snapshot = new ArenaSnapshot(world);
-
-        for (String key : sec.getKeys(false)) {
-            if (key.equals("count")) continue;
-            ConfigurationSection blockSec = sec.getConfigurationSection(key);
-            if (blockSec == null) continue;
-
-            int x = blockSec.getInt("x");
-            int y = blockSec.getInt("y");
-            int z = blockSec.getInt("z");
-
-            String dataStr = blockSec.getString("data");
-            if (dataStr == null) continue;
-
-            BlockData blockData = Bukkit.createBlockData(dataStr);
-            snapshot.addEntry(new Location(world, x, y, z), blockData, null);
+        int count = in.readInt();
+        for (int i = 0; i < count; i++) {
+            int x = in.readInt();
+            int y = in.readInt();
+            int z = in.readInt();
+            BlockData data = Bukkit.createBlockData(in.readUTF());
+            snapshot.addEntry(new Location(world, x, y, z), data, null);
         }
-
         return snapshot;
     }
 
@@ -152,50 +147,40 @@ public class ArenaSerializer {
     // Location helpers
     // -------------------------------------------------------------------------
 
-    private void writeLocation(YamlConfiguration cfg, String path, Location loc) {
-        cfg.set(path + ".world", loc.getWorld().getName());
-        cfg.set(path + ".x", loc.getX());
-        cfg.set(path + ".y", loc.getY());
-        cfg.set(path + ".z", loc.getZ());
-        cfg.set(path + ".yaw", loc.getYaw());
-        cfg.set(path + ".pitch", loc.getPitch());
+    private void writeLocation(DataOutputStream out, Location loc) throws IOException {
+        out.writeUTF(loc.getWorld().getName());
+        out.writeDouble(loc.getX());
+        out.writeDouble(loc.getY());
+        out.writeDouble(loc.getZ());
+        out.writeFloat(loc.getYaw());
+        out.writeFloat(loc.getPitch());
     }
 
-    private Location readLocation(YamlConfiguration cfg, String path) {
-        String worldName = cfg.getString(path + ".world");
-        if (worldName == null) return null;
+    private Location readLocation(DataInputStream in) throws IOException {
+        String worldName = in.readUTF();
         World world = Bukkit.getWorld(worldName);
-        if (world == null) {
-            log.warning("World '" + worldName + "' not found for path: " + path);
-            return null;
-        }
-        double x = cfg.getDouble(path + ".x");
-        double y = cfg.getDouble(path + ".y");
-        double z = cfg.getDouble(path + ".z");
-        float yaw   = (float) cfg.getDouble(path + ".yaw");
-        float pitch = (float) cfg.getDouble(path + ".pitch");
+        if (world == null) throw new IOException("World not found: " + worldName);
+        double x = in.readDouble();
+        double y = in.readDouble();
+        double z = in.readDouble();
+        float yaw = in.readFloat();
+        float pitch = in.readFloat();
         return new Location(world, x, y, z, yaw, pitch);
     }
 
-    private void writeLocationList(YamlConfiguration cfg, String path, List<Location> locs) {
-        for (int i = 0; i < locs.size(); i++) {
-            writeLocation(cfg, path + "." + i, locs.get(i));
-        }
-        cfg.set(path + "._count", locs.size());
+    private void writeLocationList(DataOutputStream out, List<Location> locs) throws IOException {
+        out.writeInt(locs.size());
+        for (Location loc : locs) writeLocation(out, loc);
     }
 
-    private List<Location> readLocationList(YamlConfiguration cfg, String path) {
-        List<Location> result = new ArrayList<>();
-        int count = cfg.getInt(path + "._count", 0);
-        for (int i = 0; i < count; i++) {
-            Location loc = readLocation(cfg, path + "." + i);
-            if (loc != null) result.add(loc);
-        }
-
+    private List<Location> readLocationList(DataInputStream in) throws IOException {
+        int count = in.readInt();
+        List<Location> result = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) result.add(readLocation(in));
         return result;
     }
 
     private File fileFor(String arenaName) {
-        return new File(arenasFolder, arenaName.toLowerCase() + ".yml");
+        return new File(arenasFolder, arenaName.toLowerCase() + ".dat");
     }
 }
