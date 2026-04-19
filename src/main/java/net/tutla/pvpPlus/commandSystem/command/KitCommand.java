@@ -5,6 +5,7 @@ import net.tutla.pvpPlus.kit.Kit;
 import net.tutla.pvpPlus.manager.KitManager;
 import net.tutla.pvpPlus.util.TextUtil;
 import org.bukkit.GameMode;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 
@@ -22,10 +23,11 @@ public class KitCommand extends TutlaCommand {
                                 new CommandTabAutoComplete("load",    List.of(), "<kit>"),
                                 new CommandTabAutoComplete("delete",  List.of(), "<kit>"),
                                 new CommandTabAutoComplete("list",    List.of(), ""),
-                                new CommandTabAutoComplete("config",  List.of(), "<kit>")
+                                new CommandTabAutoComplete("config",  List.of(), "<kit>"),
+                                new CommandTabAutoComplete("icon",  List.of(), "<kit>")
                         ),
                         "<values>"
-                ).setValues(List.of("create", "capture", "load", "delete", "list", "config"))
+                ).setValues(List.of("create", "save", "load", "delete", "list", "config", "icon"))
         );
         this.kitManager = kitManager;
     }
@@ -148,6 +150,27 @@ public class KitCommand extends TutlaCommand {
         ctx.player.sendMessage(TextUtil.parse(
                 "<yellow>Config for kit <white>" + kit.getName() +
                         "</white> — not yet implemented."));
+    }
+
+    // /kit icon <kit>
+    private void runIcon(CommandContext ctx) {
+        if (ctx.args.length < 2) {
+            ctx.player.sendMessage(TextUtil.parse("<red>Usage: /kit icon <name>"));
+            return;
+        }
+        ItemStack held = ctx.player.getInventory().getItemInMainHand();
+        if (held.getType().isAir()) {
+            ctx.player.sendMessage(TextUtil.parse("<red>Hold an item to set as the kit icon."));
+            return;
+        }
+        if (!kitManager.setIcon(ctx.player, ctx.args[1])) {
+            ctx.player.sendMessage(TextUtil.parse(
+                    "<red>No kit named <yellow>" + ctx.args[1] + "</yellow> found."));
+            return;
+        }
+        ctx.player.sendMessage(TextUtil.parse(
+                "<green>Icon for kit <yellow>" + ctx.args[1] + "</yellow> set to <white>" +
+                        held.getType().name().toLowerCase() + "</white>."));
     }
 
     private int countItems(Kit kit) {

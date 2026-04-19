@@ -41,6 +41,13 @@ public class KitSerializer {
             writeItemArray(out, kit.getArmor());
             writeItem(out, kit.getOffhand());
 
+            if (kit.hasIcon()) {
+                out.writeBoolean(true);
+                writeItem(out, kit.getIcon());
+            } else {
+                out.writeBoolean(false);
+            }
+
         } catch (IOException e) {
             log.severe("Failed to save kit " + kit.getName() + ": " + e.getMessage());
         }
@@ -92,6 +99,8 @@ public class KitSerializer {
             kit.setContents(readItemArray(in));
             kit.setArmor(readItemArray(in));
             kit.setOffhand(readItem(in));
+            boolean hasIcon = in.readBoolean();
+            if (hasIcon) kit.setIcon(readItem(in));
 
             return kit;
         }

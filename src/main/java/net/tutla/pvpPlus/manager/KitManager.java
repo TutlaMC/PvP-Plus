@@ -11,9 +11,6 @@ import java.util.*;
 public class KitManager {
 
     private final Map<String, Kit> kits = new HashMap<>();
-    // Tracks which Server is currently building a kit: UUID -> kit name
-    private final Map<UUID, String> activeSessions = new HashMap<>();
-
     private final KitSerializer serializer;
 
     public KitManager(KitSerializer serializer) {
@@ -46,6 +43,16 @@ public class KitManager {
         kit.setArmor(cloneArray(inv.getArmorContents()));
         kit.setOffhand(inv.getItemInOffHand().clone());
 
+        serializer.save(kit);
+        return true;
+    }
+
+    public boolean setIcon(Player player, String name) {
+        Kit kit = kits.get(key(name, false));
+        if (kit == null) return false;
+        ItemStack held = player.getInventory().getItemInMainHand();
+        if (held.getType().isAir()) return false;
+        kit.setIcon(held);
         serializer.save(kit);
         return true;
     }
