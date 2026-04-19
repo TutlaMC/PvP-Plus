@@ -1,16 +1,22 @@
 package net.tutla.pvpPlus.manager;
 
 import net.tutla.pvpPlus.arena.Arena;
+import net.tutla.pvpPlus.arena.ArenaSerializer;
 import org.bukkit.entity.Player;
 import java.util.*;
 
 public class ArenaManager {
-
-    // Arenas that have been saved/finalized
     private final Map<String, Arena> arenas = new HashMap<>();
-
-    // Tracks which admin is currently setting up which arena
     private final Map<UUID, Arena> setupSessions = new HashMap<>();
+    private final ArenaSerializer serializer;
+
+    public ArenaManager(ArenaSerializer serializer) {
+        this.serializer = serializer;
+    }
+
+    public void loadAll() {
+        serializer.loadAll().forEach(a -> arenas.put(a.getName(), a));
+    }
 
     // --- Setup session management ---
 
@@ -35,11 +41,10 @@ public class ArenaManager {
     public boolean saveSetup(Player admin) {
         Arena arena = setupSessions.get(admin.getUniqueId());
         if (arena == null || !arena.isFullyConfigured()) return false;
-
         arena.captureSnapshot();
-
         arenas.put(arena.getName(), arena);
         setupSessions.remove(admin.getUniqueId());
+        serializer.save(arena); // ← persist to disk
         return true;
     }
 
@@ -58,6 +63,8 @@ public class ArenaManager {
     }
 
     public boolean deleteArena(String name) {
-        return arenas.remove(name.toLowerCase()) != null;
+        boolean removed = arenas.remove(name.toLowerCase()) != null;
+        if (removed) serializer.delete(name); // ← remove file
+        return removed;
     }
 }

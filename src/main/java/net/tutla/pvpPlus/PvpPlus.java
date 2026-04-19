@@ -1,5 +1,6 @@
 package net.tutla.pvpPlus;
 
+import net.tutla.pvpPlus.arena.ArenaSerializer;
 import net.tutla.pvpPlus.commandSystem.CommandContext;
 import net.tutla.pvpPlus.commandSystem.CommandSystem;
 import net.tutla.pvpPlus.manager.ArenaManager;
@@ -17,7 +18,8 @@ public final class PvpPlus extends JavaPlugin {
     private static PvpPlus instance;
     private final CommandSystem commandSystem = new CommandSystem();
 
-    private final ArenaManager arenaManager = new ArenaManager();
+    private final ArenaSerializer serializer = new ArenaSerializer(getDataFolder(), getLogger());
+    private final ArenaManager arenaManager = new ArenaManager(serializer);
 
     // access functions
     public static PvpPlus getInstance() {
@@ -33,10 +35,11 @@ public final class PvpPlus extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-
         saveDefaultConfig();
 
+        arenaManager.loadAll();
         commandSystem.initialise();
+
         getServer().getPluginManager().registerEvents(new EventListeners(), this);
         getLogger().info("PvP Plugin Loaded!");
 

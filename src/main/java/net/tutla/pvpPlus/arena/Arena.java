@@ -47,6 +47,10 @@ public class Arena {
         snapshot.capture(pos1, pos2);
     }
 
+    public void setSnapshot(ArenaSnapshot ss){
+        snapshot = ss;
+    }
+
     /**
      * Called by FightManager after a fight ends.
      */
@@ -62,5 +66,9 @@ public class Arena {
 
     public int getSnapshotSize() {
         return snapshot == null ? 0 : snapshot.size();
+    }
+
+    public ArenaSnapshot getSnapshot(){
+        return snapshot;
     }
 }
