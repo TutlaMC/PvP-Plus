@@ -70,6 +70,10 @@ public class FightManager {
         fight.resetRound();
         fight.setState(FightState.COUNTDOWN);
 
+        if (fight.getCurrentRound() > 1) { // arena regen
+            fight.getArena().restoreSnapshot();
+        }
+
         List<FightTeam> teams = fight.getTeams();
         List<Location> allSpawns = new ArrayList<>(fight.getArena().getTeam1Spawns());
         allSpawns.addAll(fight.getArena().getTeam2Spawns());

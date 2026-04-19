@@ -71,27 +71,29 @@ public class FightListener implements Listener {
         }
     }
 
-    // Block block breaking in arena
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
-        if (fightManager.isInFight(event.getPlayer())) {
+        Fight fight = fightManager.getFight(event.getPlayer());
+        if (fight != null && fight.getState() == FightState.COUNTDOWN) {
             event.setCancelled(true);
         }
     }
 
-    // Block block placing in arena
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
-        if (fightManager.isInFight(event.getPlayer())) {
+        Fight fight = fightManager.getFight(event.getPlayer());
+        if (fight != null && fight.getState() == FightState.COUNTDOWN) {
             event.setCancelled(true);
         }
     }
 
-    // Keep hunger full during fights
     @EventHandler
     public void onHunger(FoodLevelChangeEvent event) {
         if (!(event.getEntity() instanceof Player p)) return;
-        if (fightManager.isInFight(p)) event.setCancelled(true);
+        Fight fight = fightManager.getFight(p);
+        if (fight != null && fight.getState() == FightState.COUNTDOWN) {
+            event.setCancelled(true);
+        }
     }
 
     // Spectator arena boundary enforcement
