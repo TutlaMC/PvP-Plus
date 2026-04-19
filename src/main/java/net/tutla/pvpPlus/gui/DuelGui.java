@@ -1,5 +1,6 @@
 package net.tutla.pvpPlus.gui;
 
+import net.tutla.pvpPlus.PvpPlus;
 import net.tutla.pvpPlus.arena.Arena;
 import net.tutla.pvpPlus.arena.ArenaManager;
 import net.tutla.pvpPlus.duel.DuelManager;
@@ -119,9 +120,12 @@ public class DuelGui {
                             newRounds, config.targets());
                     openWith(player, updated, duelManager, kitManager);
                 }
-                case 15 -> { // Arena — needs ArenaManager, stored in GuiManager context
-                    player.sendMessage(TextUtil.parse(
-                            "<yellow>Arena selection coming — pass ArenaManager into DuelGui."));
+                case 15 -> {
+                    ArenaSelectGui.open(player, PvpPlus.getInstance().getArenaManager(),0, arena -> {
+                        DuelConfig updated = new DuelConfig(config.kit, arena,
+                                config.kit.getDefaultRounds(), config.targets());
+                        openWith(player, updated, duelManager, kitManager);
+                    });
                 }
                 case 22 -> { // Send
                     config.targets.forEach((target) -> {
