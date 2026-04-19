@@ -275,7 +275,8 @@ public class PartyCommand extends TutlaCommand {
             return;
         }
         // TODO: hand off to FightManager — split party into two even teams
-        ctx.player.sendMessage(TextUtil.parse("<yellow>Split fight starting — pending FightManager."));
+        ctx.player.sendMessage(TextUtil.parse("<yellow>Split fight starting "));
+        
     }
 
     private void runFfa(CommandContext ctx) {

@@ -5,6 +5,7 @@ import net.tutla.pvpPlus.commandSystem.CommandContext;
 import net.tutla.pvpPlus.commandSystem.CommandSystem;
 import net.tutla.pvpPlus.duel.DuelManager;
 import net.tutla.pvpPlus.fight.FightManager;
+import net.tutla.pvpPlus.gui.GuiManager;
 import net.tutla.pvpPlus.kit.KitSerializer;
 import net.tutla.pvpPlus.arena.ArenaManager;
 import net.tutla.pvpPlus.kit.KitManager;
@@ -75,6 +76,7 @@ public final class PvpPlus extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new EventListeners(), this);
         getServer().getPluginManager().registerEvents(new PartyChatListener(partyManager), this);
         getServer().getPluginManager().registerEvents(new FightListener(fightManager), this);
+        getServer().getPluginManager().registerEvents(new GuiManager(), this);
 
         getLogger().info("PvP Plugin Loaded!");
 

@@ -209,7 +209,30 @@ public class FightManager {
     // End fight
     // -------------------------------------------------------------------------
 
-    private void endFight(Fight fight, FightTeam winner) {
+    public void leaveFight(Player player) {
+        Fight fight = playerFight.remove(player.getUniqueId());
+        if (fight == null) return;
+
+        FightTeam team = fight.getTeamOf(player.getUniqueId());
+        if (team != null) {
+            team.removeMember(player.getUniqueId());
+            team.eliminatePlayer(player.getUniqueId());
+        }
+
+        player.setGameMode(GameMode.SURVIVAL);
+        player.getInventory().clear();
+        removeScoreboard(player);
+
+        FightTeam winner = fight.getLastSurvivingTeam();
+        if (winner != null) {
+            endFight(fight, winner);
+            return;
+        }
+
+        updateScoreboard(fight);
+    }
+
+    public void endFight(Fight fight, FightTeam winner) {
         fight.setState(FightState.ENDED);
         fight.cancelActiveTask();
 
@@ -378,14 +401,11 @@ public class FightManager {
     // -------------------------------------------------------------------------
 
     private void freezePlayer(Player player) {
-        player.setWalkSpeed(0f);
-        player.setFlySpeed(0f);
-        // We also cancel movement in FightListener via PlayerMoveEvent
+        // nun here rn
     }
 
     private void unfreezePlayer(Player player) {
-        player.setWalkSpeed(0.2f);
-        player.setFlySpeed(0.1f);
+        player.setGameMode(GameMode.SURVIVAL);
     }
 
     // -------------------------------------------------------------------------

@@ -24,11 +24,10 @@ public class DuelCommand extends TutlaCommand {
                         List.of(
                                 new CommandTabAutoComplete("accept", List.of(), ""),
                                 new CommandTabAutoComplete("deny",   List.of(), ""),
-                                new CommandTabAutoComplete("gui",    List.of(), ""),
                                 new CommandTabAutoComplete("toggle", List.of(), "")
                         ),
                         "<subcommand|player>"
-                ).setValues(List.of("accept", "deny", "gui", "toggle"))
+                ).setValues(List.of("accept", "deny", "toggle"))
         );
         this.duelManager = duelManager;
         this.fightManager = fightManager;
@@ -41,7 +40,6 @@ public class DuelCommand extends TutlaCommand {
         switch (ctx.args[0].toLowerCase()) {
             case "accept" -> runAccept(ctx);
             case "deny"   -> runDeny(ctx);
-            case "gui"    -> runGui(ctx);
             case "toggle" -> runToggle(ctx);
             default       -> runChallenge(ctx);
         }
@@ -54,37 +52,8 @@ public class DuelCommand extends TutlaCommand {
             ctx.player.sendMessage(TextUtil.parse("<red>Player not found."));
             return;
         }
-        // Default: use first available kit, auto arena, kit's default rounds
-        var kit = kitManager.getServerKits().stream().findFirst().orElse(null);
-        if (kit == null) {
-            ctx.player.sendMessage(TextUtil.parse("<red>No kits configured. Use /duel gui to configure."));
-            return;
-        }
+        DuelGui.open(ctx.player, duelManager, kitManager, List.of(target));
 
-        switch (duelManager.sendDuel(ctx.player, target, kit, null, kit.getDefaultRounds())) {
-            case SENT -> {
-                ctx.player.sendMessage(TextUtil.parse(
-                        "<green>Duel request sent to <yellow>" + target.getName() + "</yellow>. " +
-                                "<gray>(30s to accept)"));
-                target.sendMessage(TextUtil.parse(
-                        "<yellow>" + ctx.player.getName() + " <green>challenged you to a duel!\n" +
-                                "<gray>Kit: <white>" + kit.getName() +
-                                " <gray>| Rounds: <white>" + kit.getDefaultRounds() + "\n" +
-                                "<gray>Use <white>/duel accept</white> or <white>/duel deny</white>."));
-            }
-            case SELF_DUEL ->
-                    ctx.player.sendMessage(TextUtil.parse("<red>You can't duel yourself."));
-            case TARGET_BUSY ->
-                    ctx.player.sendMessage(TextUtil.parse("<red>That player is already in a fight."));
-            case SENDER_BUSY ->
-                    ctx.player.sendMessage(TextUtil.parse("<red>You are already in a fight."));
-            case REQUESTS_DISABLED ->
-                    ctx.player.sendMessage(TextUtil.parse("<red>That player has duel requests disabled."));
-            case ALREADY_PENDING ->
-                    ctx.player.sendMessage(TextUtil.parse("<red>That player already has a pending duel request."));
-            case NO_ARENA ->
-                    ctx.player.sendMessage(TextUtil.parse("<red>No arenas are available right now."));
-        }
     }
 
     private void runAccept(CommandContext ctx) {
@@ -106,10 +75,6 @@ public class DuelCommand extends TutlaCommand {
         ctx.player.sendMessage(TextUtil.parse("<yellow>Duel request denied."));
     }
 
-    private void runGui(CommandContext ctx) {
-        // Opens the duel configuration GUI — handled next
-        DuelGui.open(ctx.player, duelManager, kitManager, null);
-    }
 
     private void runToggle(CommandContext ctx) {
         boolean nowEnabled = duelManager.toggleDuelRequests(ctx.player);

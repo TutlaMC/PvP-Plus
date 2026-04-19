@@ -20,14 +20,14 @@ import java.util.List;
 public class DuelGui {
 
     // State held per-player while the GUI is open
-    public record DuelConfig(Kit kit, Arena arena, int rounds, Player target) {}
+    public record DuelConfig(Kit kit, Arena arena, int rounds, List<Player> targets) {}
 
     public static void open(Player player, DuelManager duelManager,
-                            KitManager kitManager, Player target) {
+                            KitManager kitManager, List<Player> targets) {
         // Grab default kit
         Kit defaultKit = kitManager.getServerKits().stream().findFirst().orElse(null);
         DuelConfig config = new DuelConfig(defaultKit, null,
-                defaultKit != null ? defaultKit.getDefaultRounds() : 3, target);
+                defaultKit != null ? defaultKit.getDefaultRounds() : 3, targets);
         openWith(player, config, duelManager, kitManager);
     }
 
@@ -86,12 +86,12 @@ public class DuelGui {
     }
 
     private static ItemStack makeSendItem(DuelConfig config) {
-        boolean ready = config.kit() != null && config.target() != null;
+        boolean ready = config.kit() != null && !config.targets().isEmpty();
         ItemStack item = new ItemStack(ready ? Material.LIME_CONCRETE : Material.RED_CONCRETE);
         ItemMeta meta = item.getItemMeta();
         meta.displayName(TextUtil.parse(ready ? "<green>Send Challenge!" : "<red>No target selected"));
-        if (config.target() != null)
-            meta.lore(List.of(TextUtil.parse("<gray>To: <white>" + config.target().getName())));
+        if (!config.targets().isEmpty())
+            meta.lore(List.of(TextUtil.parse("<gray>To: <white>" + config.targets().getFirst().getName())));
         item.setItemMeta(meta);
         return item;
     }
@@ -109,14 +109,14 @@ public class DuelGui {
                 case 11 -> // Kit
                         KitSelectGui.open(player, kitManager, 0, kit -> {
                             DuelConfig updated = new DuelConfig(kit, config.arena(),
-                                    kit.getDefaultRounds(), config.target());
+                                    kit.getDefaultRounds(), config.targets());
                             openWith(player, updated, duelManager, kitManager);
                         });
                 case 13 -> { // Rounds
                     int delta = event.getClick() == ClickType.RIGHT ? -1 : 1;
                     int newRounds = Math.max(1, Math.min(99, config.rounds() + delta));
                     DuelConfig updated = new DuelConfig(config.kit(), config.arena(),
-                            newRounds, config.target());
+                            newRounds, config.targets());
                     openWith(player, updated, duelManager, kitManager);
                 }
                 case 15 -> { // Arena — needs ArenaManager, stored in GuiManager context
@@ -124,18 +124,38 @@ public class DuelGui {
                             "<yellow>Arena selection coming — pass ArenaManager into DuelGui."));
                 }
                 case 22 -> { // Send
-                    if (config.target() == null || config.kit() == null) return;
-                    player.closeInventory();
-                    var result = duelManager.sendDuel(
-                            player, config.target(), config.kit(),
-                            config.arena(), config.rounds());
-                    if (result == DuelManager.SendResult.SENT) {
-                        player.sendMessage(TextUtil.parse(
-                                "<green>Duel request sent to <yellow>" +
-                                        config.target().getName() + "</yellow>!"));
-                    } else {
-                        player.sendMessage(TextUtil.parse("<red>Could not send duel: " + result));
-                    }
+                    config.targets.forEach((target) -> {
+                        if (target == null || config.kit() == null) return;
+                        player.closeInventory();
+                        var result = duelManager.sendDuel(
+                                player, target, config.kit(),
+                                config.arena(), config.rounds());
+                        switch (result) {
+                            case SENT -> {
+                                player.sendMessage(TextUtil.parse(
+                                        "<green>Duel request sent to <yellow>" + target.getName() + "</yellow>. " +
+                                                "<gray>(30s to accept)"));
+                                target.sendMessage(TextUtil.parse(
+                                        "<yellow>" + player.getName() + " <green>challenged you to a duel!\n" +
+                                                "<gray>Kit: <white>" + config.kit.getName() +
+                                                " <gray>| Rounds: <white>" + config.kit.getDefaultRounds() + "\n" +
+                                                "<gray>Use <white>/duel accept</white> or <white>/duel deny</white>."));
+                            }
+                            case SELF_DUEL ->
+                                    player.sendMessage(TextUtil.parse("<red>You can't duel yourself."));
+                            case TARGET_BUSY ->
+                                    player.sendMessage(TextUtil.parse("<red>That player is already in a fight."));
+                            case SENDER_BUSY ->
+                                    player.sendMessage(TextUtil.parse("<red>You are already in a fight."));
+                            case REQUESTS_DISABLED ->
+                                    player.sendMessage(TextUtil.parse("<red>That player has duel requests disabled."));
+                            case ALREADY_PENDING ->
+                                    player.sendMessage(TextUtil.parse("<red>That player already has a pending duel request."));
+                            case NO_ARENA ->
+                                    player.sendMessage(TextUtil.parse("<red>No arenas are available right now."));
+                        }
+                    });
+
                 }
             }
         }

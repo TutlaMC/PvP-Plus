@@ -23,8 +23,13 @@ public class FightTeam {
     public boolean isEliminated(UUID uuid) { return eliminated.contains(uuid); }
     public void resetEliminated() { eliminated.clear(); }
 
+    public void removeMember(UUID uuid) {
+        members.remove(uuid);
+        eliminated.remove(uuid);
+    }
+
     public boolean isTeamEliminated() {
-        return eliminated.containsAll(members);
+        return eliminated.containsAll(members) || members.isEmpty();
     }
 
     public boolean hasMember(UUID uuid) { return members.contains(uuid); }
