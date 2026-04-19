@@ -1,4 +1,4 @@
-package net.tutla.pvpPlus;
+package net.tutla.pvpPlus.listener;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;

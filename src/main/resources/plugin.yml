@@ -21,3 +21,11 @@ commands:
     permission: permission.node
   party:
     description: manage parties
+  duel:
+    description: duel
+  leavefight:
+    description: leave a damn fight
+  queue:
+    description: get into the queue dumbass
+  spectate:
+    description: uhh spectate shi

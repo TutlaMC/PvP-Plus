@@ -1,4 +1,4 @@
-package net.tutla.pvpPlus;
+package net.tutla.pvpPlus.listener;
 
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.tutla.pvpPlus.party.Party;

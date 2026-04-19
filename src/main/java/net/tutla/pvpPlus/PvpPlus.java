@@ -3,10 +3,16 @@ package net.tutla.pvpPlus;
 import net.tutla.pvpPlus.arena.ArenaSerializer;
 import net.tutla.pvpPlus.commandSystem.CommandContext;
 import net.tutla.pvpPlus.commandSystem.CommandSystem;
+import net.tutla.pvpPlus.duel.DuelManager;
+import net.tutla.pvpPlus.fight.FightManager;
 import net.tutla.pvpPlus.kit.KitSerializer;
 import net.tutla.pvpPlus.arena.ArenaManager;
 import net.tutla.pvpPlus.kit.KitManager;
+import net.tutla.pvpPlus.listener.EventListeners;
+import net.tutla.pvpPlus.listener.FightListener;
+import net.tutla.pvpPlus.listener.PartyChatListener;
 import net.tutla.pvpPlus.party.PartyManager;
+import net.tutla.pvpPlus.queue.QueueManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -24,9 +30,11 @@ public final class PvpPlus extends JavaPlugin {
     private final ArenaSerializer serializer = new ArenaSerializer(getDataFolder(), getLogger());
     private final ArenaManager arenaManager = new ArenaManager(serializer);
     private final PartyManager partyManager = new PartyManager();
-
-    KitSerializer kitSerializer = new KitSerializer(getDataFolder(), getLogger());
-    KitManager kitManager = new KitManager(kitSerializer);
+    private final KitSerializer kitSerializer = new KitSerializer(getDataFolder(), getLogger());
+    private final KitManager kitManager = new KitManager(kitSerializer);
+    private final FightManager fightManager = new FightManager(this, arenaManager, kitManager);
+    private final QueueManager queueManager = new QueueManager(fightManager, arenaManager);
+    private final DuelManager duelManager = new DuelManager(this, fightManager, arenaManager);
 
     // access functions
     public static PvpPlus getInstance() {
@@ -42,6 +50,15 @@ public final class PvpPlus extends JavaPlugin {
     public PartyManager getPartyManager(){
         return partyManager;
     }
+    public FightManager getFightManager(){
+        return fightManager;
+    }
+    public QueueManager getQueueManager(){
+        return queueManager;
+    }
+    public DuelManager getDuelManager(){
+        return duelManager;
+    }
 
 
     // actual shi
@@ -54,8 +71,10 @@ public final class PvpPlus extends JavaPlugin {
         arenaManager.loadAll();
         commandSystem.initialise();
 
+
         getServer().getPluginManager().registerEvents(new EventListeners(), this);
         getServer().getPluginManager().registerEvents(new PartyChatListener(partyManager), this);
+        getServer().getPluginManager().registerEvents(new FightListener(fightManager), this);
 
         getLogger().info("PvP Plugin Loaded!");
 

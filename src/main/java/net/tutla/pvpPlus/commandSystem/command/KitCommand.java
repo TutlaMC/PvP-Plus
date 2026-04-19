@@ -18,7 +18,7 @@ public class KitCommand extends TutlaCommand {
                 new CommandTabAutoComplete("kit",
                         List.of(
                                 new CommandTabAutoComplete("create",  List.of(), "<name>"),
-                                new CommandTabAutoComplete("save", List.of(), ""),
+                                new CommandTabAutoComplete("save", List.of(), "<kit>"),
                                 new CommandTabAutoComplete("load",    List.of(), "<kit>"),
                                 new CommandTabAutoComplete("delete",  List.of(), "<kit>"),
                                 new CommandTabAutoComplete("list",    List.of(), ""),

@@ -2,10 +2,8 @@ package net.tutla.pvpPlus.commandSystem;
 
 
 import net.tutla.pvpPlus.PvpPlus;
-import net.tutla.pvpPlus.commandSystem.command.ArenaCommand;
+import net.tutla.pvpPlus.commandSystem.command.*;
 import net.tutla.pvpPlus.arena.Arena;
-import net.tutla.pvpPlus.commandSystem.command.KitCommand;
-import net.tutla.pvpPlus.commandSystem.command.PartyCommand;
 import net.tutla.pvpPlus.kit.Kit;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -13,6 +11,7 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class CommandSystem {
     //private final CommandManhunt manhuntCommand = new CommandManhunt();
@@ -29,6 +28,10 @@ public class CommandSystem {
         commands.add(new ArenaCommand(pvpPlus.getArenaManager()));
         commands.add(new KitCommand(pvpPlus.getKitManager()));
         commands.add(new PartyCommand(pvpPlus.getPartyManager()));
+        commands.add(new DuelCommand(pvpPlus.getDuelManager(), pvpPlus.getFightManager(), pvpPlus.getKitManager()));
+        commands.add(new QueueCommand(pvpPlus.getQueueManager(), pvpPlus.getKitManager()));
+        commands.add(new LeaveFightCommand(pvpPlus.getFightManager()));
+        commands.add(new SpectateCommand(pvpPlus.getFightManager()));
     }
 
     public boolean execute(CommandContext cmdParams){
@@ -113,6 +116,15 @@ public class CommandSystem {
                 return pvpPlus.getPartyManager().getAllPartyLeaderNames().stream()
                         .filter(name -> name.toLowerCase().startsWith(arg.toLowerCase()))
                         .toList();
+            }
+            case "<subcommand|player>" -> {
+                return Stream.concat(
+                        Bukkit.getOnlinePlayers().stream()
+                                .map(Player::getName)
+                                .filter(name -> name.toLowerCase().startsWith(arg.toLowerCase())),
+                        autocomplete.values.stream()
+                                .filter(s -> s.startsWith(arg.toLowerCase()))
+                ).toList();
             }
             default -> {return Collections.emptyList();}
         }
