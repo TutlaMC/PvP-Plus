@@ -13,7 +13,7 @@ public class QueueCommand extends TutlaCommand {
     private final KitManager kitManager;
 
     public QueueCommand(QueueManager queueManager, KitManager kitManager) {
-        super("queue", "/queue <join|leave|status|gui>", "Join the matchmaking queue",
+        super("queue", "/queue", "Join the matchmaking queue",
                 CommandSection.CONTROLS,
                 new CommandTabAutoComplete("queue",
                         List.of(),
