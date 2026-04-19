@@ -1,6 +1,6 @@
 package net.tutla.pvpPlus.manager;
 
-import net.tutla.pvpPlus.model.Arena;
+import net.tutla.pvpPlus.arena.Arena;
 import org.bukkit.entity.Player;
 import java.util.*;
 
@@ -35,6 +35,9 @@ public class ArenaManager {
     public boolean saveSetup(Player admin) {
         Arena arena = setupSessions.get(admin.getUniqueId());
         if (arena == null || !arena.isFullyConfigured()) return false;
+
+        arena.captureSnapshot();
+
         arenas.put(arena.getName(), arena);
         setupSessions.remove(admin.getUniqueId());
         return true;

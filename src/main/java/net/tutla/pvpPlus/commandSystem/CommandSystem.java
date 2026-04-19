@@ -3,6 +3,7 @@ package net.tutla.pvpPlus.commandSystem;
 
 import net.tutla.pvpPlus.PvpPlus;
 import net.tutla.pvpPlus.commandSystem.command.ArenaCommand;
+import net.tutla.pvpPlus.arena.Arena;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -88,6 +89,12 @@ public class CommandSystem {
             case "<player>" -> {
                 return Bukkit.getOnlinePlayers().stream()
                         .map(Player::getName)
+                        .filter(name -> name.toLowerCase().startsWith(arg.toLowerCase()))
+                        .toList();
+            }
+            case "<arena>" -> {
+                return pvpPlus.getArenaManager().getAllArenas().stream()
+                        .map(Arena::getName)
                         .filter(name -> name.toLowerCase().startsWith(arg.toLowerCase()))
                         .toList();
             }

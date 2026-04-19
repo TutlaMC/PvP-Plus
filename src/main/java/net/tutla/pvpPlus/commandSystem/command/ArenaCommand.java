@@ -2,7 +2,7 @@ package net.tutla.pvpPlus.commandSystem.command;
 
 import net.tutla.pvpPlus.commandSystem.*;
 import net.tutla.pvpPlus.manager.ArenaManager;
-import net.tutla.pvpPlus.model.Arena;
+import net.tutla.pvpPlus.arena.Arena;
 import net.tutla.pvpPlus.util.TextUtil;
 import org.bukkit.Location;
 
@@ -24,14 +24,15 @@ public class ArenaCommand extends TutlaCommand {
                                 new CommandTabAutoComplete("addspawn2",List.of(), ""),
                                 new CommandTabAutoComplete("save",     List.of(), ""),
                                 new CommandTabAutoComplete("cancel",   List.of(), ""),
-                                new CommandTabAutoComplete("delete",   List.of(), ""),
-                                new CommandTabAutoComplete("list",     List.of(), "")
+                                new CommandTabAutoComplete("delete",   List.of(), "<arena>"),
+                                new CommandTabAutoComplete("list",     List.of(), ""),
+                                new CommandTabAutoComplete("restore",  List.of(), "<arena>")
                         ),
                         "<values>"
                 ).setValues(List.of(
                         "create","setpos1","setpos2",
                         "addspawn1","addspawn2",
-                        "save","cancel","delete","list"
+                        "save","cancel","delete","list", "restore"
                 ))
         );
         this.arenaManager = arenaManager;
@@ -52,6 +53,7 @@ public class ArenaCommand extends TutlaCommand {
             case "cancel"    -> runCancel(ctx);
             case "delete"    -> runDelete(ctx);
             case "list"      -> runList(ctx);
+            case "restore"   -> runRestore(ctx);
             default          -> { return false; }
         }
         return true;
@@ -134,7 +136,9 @@ public class ArenaCommand extends TutlaCommand {
         }
 
         arenaManager.saveSetup(ctx.player);
-        ctx.player.sendMessage(TextUtil.parse("<green>Arena <yellow>" + arena.getName() + "</yellow> saved successfully!"));
+        ctx.player.sendMessage(TextUtil.parse(
+                "<green>Arena <yellow>" + arena.getName() + "</yellow> saved! " +
+                        "<gray>(" + arena.getSnapshotSize() + " blocks captured)"));
     }
 
     private void runCancel(CommandContext ctx) {
@@ -180,6 +184,27 @@ public class ArenaCommand extends TutlaCommand {
         }
     }
 
+    // /arena restore
+    private void runRestore(CommandContext ctx){
+        if (ctx.args.length < 2) {
+            ctx.player.sendMessage(TextUtil.parse("<red>Usage: /arena restore <name>"));
+            return;
+        }
+        String name = ctx.args[1];
+        Arena arena = arenaManager.getArena(name);
+        if (arena == null) {
+            ctx.player.sendMessage(TextUtil.parse("<red>No arena named <yellow>" + name + "</yellow> found."));
+            return;
+        }
+
+        arena.restoreSnapshot();
+        arena.setInUse(false);
+
+        ctx.player.sendMessage(TextUtil.parse("<green>Arena <yellow>" + name + "</yellow> restored."));
+    }
+
+
+    // util
     private String formatLoc(Location l) {
         return String.format("%.1f, %.1f, %.1f", l.getX(), l.getY(), l.getZ());
     }

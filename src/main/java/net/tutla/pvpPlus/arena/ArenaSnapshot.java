@@ -1,4 +1,4 @@
-package net.tutla.pvpPlus.model;
+package net.tutla.pvpPlus.arena;
 
 import org.bukkit.Location;
 import org.bukkit.World;
