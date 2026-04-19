@@ -42,7 +42,7 @@ Every arena saves a **full block snapshot** on creation. When a fight ends, ever
 
 ## 🎒 Kit System
 
-Kits capture your **entire inventory** — all 36 slots, armor, and offhand — using Paper's native NBT serialization. This means shulker box contents, bundle contents, enchantments, and custom item data are all preserved faithfully.
+Kits capture your entire inventory. This means shulker box contents, bundle contents, enchantments, and custom item data are all preserved.
 
 ```
 /kit create <name>       Create a new empty kit
@@ -55,7 +55,7 @@ Kits capture your **entire inventory** — all 36 slots, armor, and offhand — 
 /kit config <name>       (Extensible) Open kit configuration
 ```
 
-Kits are stored in `plugins/pvp-plus/kits/admin/` and `kits/player/` as gzip-compressed `.kit` files. Player-created kits are flagged separately for future player kit support.
+Kits are stored in `plugins/pvp-plus/kits/admin/` and `kits/player/` as `.kit` files.
 
 ---
 
@@ -63,9 +63,9 @@ Kits are stored in `plugins/pvp-plus/kits/admin/` and `kits/player/` as gzip-com
 
 Challenge any player to a configurable duel. Duels go through a **GUI configuration screen** where the challenger picks:
 
-- **Kit** — paginated kit browser with icons
+- **Kit** — kit browser with icons
 - **Rounds** — left/right click to adjust (defaults to kit's setting)
-- **Arena** — paginated arena browser (unavailable arenas shown but unselectable)
+- **Arena** — arena browse
 
 ```
 /duel <player>           Open duel config GUI targeting that player
@@ -80,7 +80,7 @@ Requests expire after **30 seconds** automatically.
 
 ## 👥 Party System
 
-Full party support with leader controls, party chat, and multi-mode combat.
+Full party support with leader controls, party chat, and more.
 
 ```
 /party create            Create a new party (you become leader)
@@ -104,7 +104,7 @@ Full party support with leader controls, party chat, and multi-mode combat.
 /party ffa               Every member fights solo — opens config GUI
 ```
 
-**Split** randomly divides the party into two even teams. **FFA** makes every member their own team — last one standing wins.
+**Split** randomly divides the party into two even teams. **FFA** makes every member their own team - last one standing wins.
 
 ---
 
@@ -129,28 +129,15 @@ Every fight — whether a duel, party duel, split, FFA, or queue match — goes 
 
 ### Flow
 1. Both teams are teleported to their spawn points in the arena
-2. A **3-second countdown** plays as a title — players are **frozen** (Adventure mode, movement blocked)
+2. A **3-second countdown** plays as a title — players are **frozen**
 3. On **FIGHT!**, players are unfrozen and combat begins
-4. On death, the player's **death screen is suppressed** — they enter spectator mode for that round
+4. On death, the player enters spectator mode for that round
 5. When all members of a team are eliminated, the **round winner** is announced
 6. After all rounds, the **fight winner** is announced with a full summary
 
 ### Rounds
-Fights use a **best-of** system — the first team to win the majority of rounds wins the fight. Round scores are displayed on a **live sidebar scoreboard**.
+Fights use a **best-of** system - the first team to win the majority of rounds wins the fight. Round scores are displayed on a **live sidebar scoreboard**.
 
-### Fight Summary
-After every fight, a summary is printed to all participants and spectators:
-
-```
-━━━━━━ Fight Summary ━━━━━━
-Winner: Steve
-Score: Steve: 2 | Alex: 1
-
-Kills:
-  Steve → Alex, Alex
-  Alex → Steve
-━━━━━━━━━━━━━━━━━━━━━━━━━
-```
 
 ### Forfeit
 ```
