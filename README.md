@@ -136,7 +136,7 @@ Every fight — whether a duel, party duel, split, FFA, or queue match — goes 
 6. After all rounds, the **fight winner** is announced with a full summary
 
 ### Rounds
-Fights use a **best-of** system - the first team to win the majority of rounds wins the fight. Round scores are displayed on a **live sidebar scoreboard**.
+Fights use a **first-to** system - the first team to reach the target wins the fight. Round scores are displayed on a **live sidebar scoreboard**.
 
 
 ### Forfeit
