@@ -91,7 +91,7 @@ public class DuelGui {
     private static ItemStack makeRoundsItem(int rounds) {
         ItemStack item = new ItemStack(Material.PAPER);
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(TextUtil.parse("<aqua>Rounds: <white>" + rounds));
+        meta.displayName(TextUtil.parse("<aqua>First to: <white>" + rounds));
         meta.lore(List.of(
                 TextUtil.parse("<gray>Left click: <white>+1"),
                 TextUtil.parse("<gray>Right click: <white>-1")

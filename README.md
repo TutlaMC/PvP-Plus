@@ -173,13 +173,13 @@ Spectators are placed in Spectator mode inside the arena. Movement is **bounded 
 - [ ] Statistics tracking (kills, wins, K/D per player)
 - [ ] Fight history logs
 - [ ] Leaderboards
-- [ ] Player kit creation
 - [ ] Kit configuration (custom options per kit)
 - [ ] Lobby/spawn location configuration
 - [ ] Per-kit queue ranked matching
 - [ ] ELO based queue
 - [ ] Kiteditor
 - [ ] Custom site to show rankings
+- [ ] Queue Multiple Kits at once
 
 ---
 

@@ -70,9 +70,7 @@ public class FightManager {
         fight.resetRound();
         fight.setState(FightState.COUNTDOWN);
 
-        if (fight.getCurrentRound() > 1) { // arena regen
-            fight.getArena().restoreSnapshot();
-        }
+        fight.getArena().restoreSnapshot();
 
         List<FightTeam> teams = fight.getTeams();
         List<Location> allSpawns = new ArrayList<>(fight.getArena().getTeam1Spawns());
@@ -129,7 +127,7 @@ public class FightManager {
                 if (count > 0) {
                     broadcastTitle(fight,
                             "<red>" + count,
-                            "<gray>Round " + fight.getCurrentRound() + " of " + fight.getTotalRounds(),
+                            "<gray>Round " + fight.getCurrentRound(),
                             0, 25, 5);
                     broadcastSound(fight, Sound.UI_BUTTON_CLICK);
                     count--;
@@ -198,6 +196,7 @@ public class FightManager {
     private void roundWon(Fight fight, FightTeam winner) {
         fight.setState(FightState.BETWEEN_ROUNDS);
         fight.cancelActiveTask();
+
         winner.addRoundWin();
         updateScoreboard(fight);
 
@@ -206,20 +205,10 @@ public class FightManager {
                 "<gray>Score: " + getScoreLine(fight),
                 0, 40, 10);
 
-        // Check if fight is over
-        boolean fightOver = false;
-        int winsNeeded = (fight.getTotalRounds() / 2) + 1; // majority of rounds
-
-        if (winner.getRoundWins() >= winsNeeded) {
-            fightOver = true;
-        } else if (fight.getCurrentRound() >= fight.getTotalRounds()) {
-            fightOver = true;
-        }
-
-        if (fightOver) {
+        if (winner.getRoundWins() >= fight.getTotalRounds()) {
             fight.setActiveTask(new BukkitRunnable() {
                 @Override public void run() { endFight(fight, winner); }
-            }.runTaskLater(plugin, 60L)); // 3 seconds
+            }.runTaskLater(plugin, 60L));
         } else {
             fight.setActiveTask(new BukkitRunnable() {
                 @Override public void run() { startRound(fight); }
@@ -389,7 +378,7 @@ public class FightManager {
 
         int line = fight.getTeams().size() + 2;
         setScore(obj, " ", line--);
-        setScore(obj, "§eRound §f" + fight.getCurrentRound() + "§7/§f" + fight.getTotalRounds(), line--);
+        setScore(obj, "§eRound §f" + fight.getCurrentRound() + "§7 §(FT" + fight.getTotalRounds()+")", line--);
         setScore(obj, " §r", line--);
 
         for (FightTeam team : fight.getTeams()) {
