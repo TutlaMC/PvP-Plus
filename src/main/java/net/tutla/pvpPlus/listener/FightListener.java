@@ -1,9 +1,11 @@
 package net.tutla.pvpPlus.listener;
 
+import net.tutla.pvpPlus.PvpPlus;
 import net.tutla.pvpPlus.arena.Arena;
 import net.tutla.pvpPlus.fight.Fight;
 import net.tutla.pvpPlus.fight.FightManager;
 import net.tutla.pvpPlus.fight.FightState;
+import net.tutla.pvpPlus.queue.QueueManager;
 import net.tutla.pvpPlus.util.TextUtil;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -20,9 +22,11 @@ import org.bukkit.event.block.BlockPlaceEvent;
 public class FightListener implements Listener {
 
     private final FightManager fightManager;
+    private final QueueManager queueManager;
 
     public FightListener(FightManager fightManager) {
         this.fightManager = fightManager;
+        this.queueManager = PvpPlus.getInstance().getQueueManager();
     }
 
     // Cancel lethal damage and hand to FightManager instead of death screen
@@ -138,5 +142,6 @@ public class FightListener implements Listener {
         if (fightManager.isSpectating(player)) {
             fightManager.removeSpectator(player);
         }
+        queueManager.checkAndLeave(player);
     }
 }

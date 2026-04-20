@@ -3,6 +3,7 @@ package net.tutla.pvpPlus.queue;
 import net.tutla.pvpPlus.arena.ArenaManager;
 import net.tutla.pvpPlus.fight.*;
 import net.tutla.pvpPlus.kit.Kit;
+import net.tutla.pvpPlus.util.TextUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -43,6 +44,9 @@ public class QueueManager {
         if (kitName == null) return false;
         Queue<UUID> queue = queues.get(kitName);
         if (queue != null) queue.remove(player.getUniqueId());
+        if (player.isOnline()){
+            player.sendMessage(TextUtil.parse("<green>You have left queue for "+kitName));
+        }
         return true;
     }
 
@@ -91,4 +95,9 @@ public class QueueManager {
     }
 
     public Map<String, Queue<UUID>> getAllQueues() { return queues; }
+    public void checkAndLeave(Player player){
+        if (isInQueue(player)){
+            leaveQueue(player);
+        }
+    }
 }
