@@ -116,10 +116,9 @@ public class FightManager {
         p.setGameMode(GameMode.ADVENTURE);
         p.setHealth(20);
         p.setFoodLevel(20);
-        p.setSaturation(20);
-        p.getInventory().clear();
+        p.setSaturation(20);p.getInventory().clear();
         kitManager.applyKit(p, fight.getKit());
-        // freeze is handled by PlayerMoveEvent during COUNTDOWN state
+        p.updateInventory();
     }
 
     private void runCountdown(Fight fight) {
