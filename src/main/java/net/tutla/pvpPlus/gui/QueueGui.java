@@ -20,6 +20,8 @@ import java.util.List;
 public class QueueGui {
 
     public static void open(Player player, QueueManager queueManager, KitManager kitManager) {
+        queueManager.checkAndLeave(player);
+
         List<Kit> kits = new ArrayList<>(kitManager.getServerKits());
         int size = Math.max(9, (int)(Math.ceil(kits.size() / 9.0)) * 9);
         Inventory inv = Bukkit.createInventory(null, Math.min(54, size),
